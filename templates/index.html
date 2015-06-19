@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript">
+$(function () {
+    var submit_form = function(e) {
+            $.getJSON($SCRIPT_ROOT + '/calculate_current', {}, function (data) {
+                $.ajax({
+                    url: '/mark_online',
+                    type: 'POST',
+                    success: function (response) {
+                        console.log(response);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+                $('#result').text(data.current_row);
+                if (data.current_row != '') {
+                    var worker = new Worker('worker.js');
+                    worker.postMessage([data.current_row, data.current_part]);
+                    worker.onmessage = function (event) {
+                        $('#result_worker').text(event.data);
+                        $.ajax({
+                            url: '/watch_worker',
+                            data: JSON.stringify(event.data),
+                            contentType: 'application/json;charset=UTF-8',
+                            type: 'POST',
+                            success: function (response) {
+                                if(response.current_row != '') {
+                                    worker.postMessage([response.current_row, response.current_part]);
+                                }
+                            },
+                            error: function (error) {
+                                console.log(error);
+                            }
+                        });
+                    };
+                }
+            });
+        return false;
+    };
+    $('a#calculate').bind('click', submit_form);
+});
+</script>
+
+<script>
+    window.onbeforeunload = function() {
+        $.ajax({
+            url: '/mark_offline',
+            type: 'POST',
+            success: function (response) {
+                console.log(response);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    return "Close worker?";
+};
+</script>
+
+<p><a href=# id="calculate">Get data to check it for being prime</a>
+<p>Result: <output id="result_worker"></output></p>
+<p><a href="/users_online">View online clients number</a></p>
+{% endblock %}

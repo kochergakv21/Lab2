@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript">
+        setInterval( function() {
+            $.ajax({
+                url: '/online',
+                success: function (response) {
+                    $('#onl').text(response.result);
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        } , 2000)
+</script>
+<p>Online: <output id="onl"></output></p>
+{% endblock %}
